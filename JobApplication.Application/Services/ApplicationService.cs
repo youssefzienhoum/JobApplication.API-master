@@ -35,7 +35,7 @@ namespace JobApplication.Application.Services
 
             var candidate = await _candidateRepository.GetByUserIdAsync(_currentUserService.UserId);
             if (candidate == null)
-                throw new InvalidOperationException("Candidate profile not found.");
+                throw new UnauthorizedAccessException("Candidate profile not found.");
 
             var alreadyApplied = await _applicationRepository.ExistsAsync(candidate.Id, request.JobId);
             if (alreadyApplied)

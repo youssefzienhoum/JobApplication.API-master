@@ -10,6 +10,7 @@ namespace JobApplication.Infrastructure.Persistence
     {
         public DbSet<Job> Jobs { get; set; }
         public DbSet<Candidate> Candidates { get; set; }
+        public DbSet<Recruiter> Recruiters { get; set; }
         public DbSet<JobCandidateApplication> JobCandidateApplications { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -20,14 +21,34 @@ namespace JobApplication.Infrastructure.Persistence
         {
             base.OnModelCreating(builder);
 
-            builder.Entity<Job>(entity =>
+            builder.Entity<Recruiter>(entity =>
             {
-                entity.HasIndex(j => j.RecruiterId);
+                entity.HasIndex(r => r.ApplicationUserId).IsUnique();
+                entity.HasOne<ApplicationUser>()
+                      .WithMany()
+                      .HasForeignKey(r => r.ApplicationUserId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<Candidate>(entity =>
             {
-                entity.HasIndex(c => c.UserId).IsUnique();
+                entity.HasIndex(c => c.ApplicationUserId).IsUnique();
+                entity.HasOne<ApplicationUser>()
+                      .WithMany()
+                      .HasForeignKey(c => c.ApplicationUserId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<Job>(entity =>
+            {
+                entity.HasIndex(j => j.RecruiterId);
+                entity.HasOne(j => j.Recruiter)
+                      .WithMany(r => r.Jobs)
+                      .HasForeignKey(j => j.RecruiterId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<JobCandidateApplication>(entity =>

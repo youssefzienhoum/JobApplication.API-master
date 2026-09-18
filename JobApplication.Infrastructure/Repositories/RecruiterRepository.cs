@@ -5,23 +5,23 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JobApplication.Infrastructure.Repositories
 {
-    public class CandidateRepository : ICandidateRepository
+    public class RecruiterRepository : IRecruiterRepository
     {
         private readonly ApplicationDbContext _context;
 
-        public CandidateRepository(ApplicationDbContext context)
+        public RecruiterRepository(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task<Candidate?> GetByUserIdAsync(string userId)
+        public async Task<Recruiter?> GetByUserIdAsync(string userId)
         {
-            return await _context.Candidates.FirstOrDefaultAsync(c => c.ApplicationUserId == userId);
+            return await _context.Recruiters.FirstOrDefaultAsync(r => r.ApplicationUserId == userId);
         }
 
-        public async Task InsertAsync(Candidate candidate)
+        public async Task InsertAsync(Recruiter recruiter)
         {
-            await _context.Candidates.AddAsync(candidate);
+            await _context.Recruiters.AddAsync(recruiter);
         }
 
         public async Task SaveChangesAsync()

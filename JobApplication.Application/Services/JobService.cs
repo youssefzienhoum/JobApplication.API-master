@@ -10,22 +10,31 @@ namespace JobApplication.Application.Services
     public class JobService
     {
         private readonly IJobRepository _jobRepository;
+        private readonly IRecruiterRepository _recruiterRepository;
         private readonly ICurrentUserService _currentUserService;
 
-        public JobService(IJobRepository jobRepository, ICurrentUserService currentUserService)
+        public JobService(
+            IJobRepository jobRepository,
+            IRecruiterRepository recruiterRepository,
+            ICurrentUserService currentUserService)
         {
             _jobRepository = jobRepository;
+            _recruiterRepository = recruiterRepository;
             _currentUserService = currentUserService;
         }
 
         public async Task<int> CreateAsync(CreateJobDto createJobDto)
         {   
+            var recruiter = await _recruiterRepository.GetByUserIdAsync(_currentUserService.UserId);
+            if (recruiter == null)
+                throw new UnauthorizedAccessException("Recruiter profile not found.");
+
             var job = new Job()
             {
                 Title = createJobDto.Title,
                 Description = createJobDto.Description,
                 IsActive = true,
-                RecruiterId = _currentUserService.UserId
+                RecruiterId = recruiter.Id
             };
             await _jobRepository.InsertAsync(job);
             await _jobRepository.SaveChangesAsync();
@@ -39,7 +48,8 @@ namespace JobApplication.Application.Services
             if (job == null)
                 throw new KeyNotFoundException("Job not found.");
 
-            if (job.RecruiterId != _currentUserService.UserId)
+            var recruiter = await _recruiterRepository.GetByUserIdAsync(_currentUserService.UserId);
+            if (recruiter == null || job.RecruiterId != recruiter.Id)
                 throw new UnauthorizedAccessException("You do not own this job.");
 
             job.Close();

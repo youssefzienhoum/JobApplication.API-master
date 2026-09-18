@@ -21,11 +21,22 @@ namespace JobApplication.API.Controllers
         [Authorize(Roles = "Recruiter")]
         public async Task<IActionResult> Create(CreateJobDto createJobDto)
         {
-            var id = await _JobService.CreateAsync(createJobDto);
-            return Ok(new
+            try
             {
-                id = id 
-            }); 
+                var id = await _JobService.CreateAsync(createJobDto);
+                return Ok(new
+                {
+                    id = id 
+                }); 
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         [HttpPut("{id}/close")]

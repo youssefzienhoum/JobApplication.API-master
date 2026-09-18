@@ -37,6 +37,10 @@ namespace JobApplication.API.Controllers
                 var response = await _authService.LoginAsync(request);
                 return Ok(response);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { error = ex.Message });

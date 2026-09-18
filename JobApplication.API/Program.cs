@@ -77,15 +77,46 @@ namespace JobApplication.API
             builder.Services.AddScoped<IJobRepository, JobRepository>();
             builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
             builder.Services.AddScoped<ICandidateRepository, CandidateRepository>();
+            builder.Services.AddScoped<IRecruiterRepository, RecruiterRepository>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
             builder.Services.AddHttpContextAccessor();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
+                {
+                    document.Components ??= new Microsoft.OpenApi.Models.OpenApiComponents();
+                    document.Components.SecuritySchemes.Add("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        Description = "Enter JWT Bearer token"
+                    });
+                    document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                    {
+                        {
+                            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                            {
+                                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                                {
+                                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            Array.Empty<string>()
+                        }
+                    });
+                    return Task.CompletedTask;
+                });
+            });
 
             var app = builder.Build();
+
+            app.UseMiddleware<JobApplication.API.Middlewares.ExceptionHandlingMiddleware>();
 
             // Seed roles
             using (var scope = app.Services.CreateScope())
@@ -108,7 +139,7 @@ namespace JobApplication.API
                 app.MapScalarApiReference(options =>
                 {
                     options.WithPreferredScheme("Bearer");
-                    options.AddHttpBearerAuthentication(bearer =>
+                    options.WithHttpBearerAuthentication(bearer =>
                     {
                         bearer.Token = string.Empty;
                     });
